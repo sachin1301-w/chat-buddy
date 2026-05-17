@@ -30,7 +30,7 @@ export const createBaseEvent = (
   };
 };
 
-export const createEvent = async (auth: any, event: EventType): Promise<calendar_v3.Schema$Event> => {
+export const createEvent = async (auth: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, event: EventType): Promise<calendar_v3.Schema$Event> => {
   const cal = google.calendar({
     version: "v3",
     auth,
@@ -46,7 +46,7 @@ export const createEvent = async (auth: any, event: EventType): Promise<calendar
     });
 
     return result.data;
-  } catch (error: any) {
+  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
     if (error.code === 401 || (error.message && error.message.includes("Invalid Credentials"))) {
       const tokenPath = resolveGoogleTokenPath();
       if (fs.existsSync(tokenPath)) {

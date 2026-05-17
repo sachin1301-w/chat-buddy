@@ -1,5 +1,5 @@
 /**
- * GooleReminder Service
+ * GoogleReminder Service
  */
 import { calendar_v3 } from "googleapis";
 import { createEvent, createBaseEvent } from "./calendarAdapter.service.js";

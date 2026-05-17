@@ -158,7 +158,7 @@ export const loadConfig = (): BotConfig | null => {
       allowGroupReplies: raw.allowGroupReplies ?? false,
       timezone: raw.timezone ?? "Asia/Kolkata",
     };
-  } catch (err) {
+  } catch {
     console.error("Failed to load config. It may be corrupted or from another machine.");
     return null;
   }
