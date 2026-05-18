@@ -5,17 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0]
+
+### Added
+- **Authentication Layer Refactor**: Introduced `googleAuthBootstrap.ts` to centralize config loading, auth context resolution, and authenticated client creation.
+- **Calendar Adapter Restructure**: Introduced `calendarAdapter.service.ts` to handle Google Calendar API interactions, extracting `createBaseEvent()` helper.
+- **Structured Error Handling**: Introduced `GoogleAuthError` for reliable authentication error handling and safe token lifecycle recovery.
+
+### Changed
+- **Removed Utility Duplication**: Removed `src/utils/googleAuth.ts` and `src/utils/response.ts`, migrating their logic to domain boundaries.
+- **Service Layer Cleanup**: `googleMeet.service.ts` and `googleReminder.service.ts` now act as pure orchestration layers, delegating external API communication to the calendar adapter.
+- **Code Quality**: Reduced risk of circular dependencies by separating identity/token handling from business logic.
+
 ## [1.5.0]
 
 ### Added
-
-- **Persistent Memory**: Implemented persistent conversation memory using file-based storage, allowing the bot to retain context across restarts.
-- **Improved Authentication Flow**: Completely refactored the Google Calendar authentication flow, resolving terminology issues and eliminating duplication in the utils layer.
-
-### Changed
-
-- **Documentation**: Overhauled the README to significantly improve the onboarding experience, structure, and clarity (including fixing the QR code setup instructions).
-- **Code Quality**: Addressed multiple TypeScript build errors, resolved lint warnings, and enforced prettier formatting across the codebase.
+- **Persistent Memory**: Implemented persistent conversation memory using file-based storage.
+- **Improved Documentation**: Restructured the README to improve onboarding and fixed QR code setup instructions.
 
 ## [1.4.0]
 
