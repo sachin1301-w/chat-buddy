@@ -29,6 +29,7 @@ declare module "whatsapp-web.js" {
   export class Client {
     constructor(options?: ClientOptions);
     on(event: "loading_screen", listener: (percent: string, message: string) => void): this;
+    on(event: "change_state", listener: (state: string) => void): this;
     on(event: "authenticated", listener: () => void): this;
     on(event: "qr", listener: (qr: string) => void): this;
     on(event: "ready", listener: () => void | Promise<void>): this;

@@ -9,6 +9,7 @@ import { createProtocols } from "../config/agent.protocol.js";
 import { storeMessage } from "./memory.service.js";
 import { handleCommand } from "./command.service.js";
 import { rememberOutgoingReply, shouldIgnoreOutgoingEcho } from "./outgoingReplyTracker.js";
+import { tryCreateMeetingFromText } from "./meetingScheduler.service.js";
 
 type MessageType = import("whatsapp-web.js").Message;
 
@@ -56,6 +57,17 @@ const getDebounceMs = (): number => {
   if (value < 300) return 300;
   if (value > 15000) return 15000;
   return Math.floor(value);
+};
+
+const clearPendingReply = (userId: string): void => {
+  const pending = pendingReplies.get(userId);
+  if (!pending) return;
+
+  if (pending.timer) {
+    clearTimeout(pending.timer);
+  }
+
+  pendingReplies.delete(userId);
 };
 
 const scheduleBufferedReply = (userId: string): void => {
@@ -168,7 +180,16 @@ export const handleMessages = async (
   storeMessage(contactName, text, false);
 
   if (textLower.startsWith("/")) {
-    await handleCommand(message, textLower);
+    await handleCommand(message, text);
+    return;
+  }
+
+  const scheduledMeeting = await tryCreateMeetingFromText(contactName, text);
+  if (scheduledMeeting) {
+    clearPendingReply(userId);
+    storeMessage(contactName, scheduledMeeting.reply, true);
+    rememberOutgoingReply(userId, scheduledMeeting.reply);
+    await message.reply(scheduledMeeting.reply);
     return;
   }
 

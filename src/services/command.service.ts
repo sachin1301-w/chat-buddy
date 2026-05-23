@@ -3,6 +3,7 @@
  */
 import { clearHistory, getHistory } from "./memory.service.js";
 import { rememberOutgoingReply } from "./outgoingReplyTracker.js";
+import { tryCreateMeetingFromText } from "./meetingScheduler.service.js";
 
 type MessageType = import("whatsapp-web.js").Message;
 
@@ -20,7 +21,10 @@ const getSafeContactName = async (message: MessageType, fallbackName: string): P
 };
 
 export const handleCommand = async (message: MessageType, text: string): Promise<void> => {
-  if (text == "/") {
+  const normalizedText = text.trim();
+  const lowerText = normalizedText.toLowerCase();
+
+  if (normalizedText == "/") {
     rememberOutgoingReply(message.from, `Welcome to bot helper dashboard : 
       - Enter /time for current time
       - Enter /schedule for setting an reminder
@@ -35,25 +39,35 @@ export const handleCommand = async (message: MessageType, text: string): Promise
         `);
   }
 
-  if (text == "/time") {
+  if (lowerText == "/time") {
     const date = new Date();
     rememberOutgoingReply(message.from, `The current time is ${date.getHours()}:${date.getMinutes()}`);
     await message.reply(`The current time is ${date.getHours()}:${date.getMinutes()}`);
   }
 
-  if (text == "/schedule") {
-    rememberOutgoingReply(message.from, `Currently busy this week. Please feel free to reach out again next week.`);
-    await message.reply(`Currently busy this week. Please feel free to reach out again next week.`);
+  if (lowerText.startsWith("/schedule")) {
+    const result = await tryCreateMeetingFromText(message.from, normalizedText);
+
+    if (result) {
+      rememberOutgoingReply(message.from, result.reply);
+      await message.reply(result.reply);
+      return;
+    }
+
+    const promptReply =
+      "Send me a meeting time like `/schedule meeting at 8pm` and I will create the Google Meet link.";
+    rememberOutgoingReply(message.from, promptReply);
+    await message.reply(promptReply);
   }
 
-  if (text == "/reset") {
+  if (lowerText == "/reset") {
     const contactName = await getSafeContactName(message, "User");
     clearHistory(contactName);
     rememberOutgoingReply(message.from, "Chat history has been cleared.");
     await message.reply("Chat history has been cleared.");
   }
 
-  if (text == "/history") {
+  if (lowerText == "/history") {
     const contactName = await getSafeContactName(message, "User");
     const history = getHistory(contactName);
     if (history.length === 0) {
