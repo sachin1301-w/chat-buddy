@@ -8,6 +8,7 @@ import { botRebootTime } from "../bot.js";
 import { createProtocols } from "../config/agent.protocol.js";
 import { storeMessage } from "./memory.service.js";
 import { handleCommand } from "./command.service.js";
+import { rememberOutgoingReply, shouldIgnoreOutgoingEcho } from "./outgoingReplyTracker.js";
 
 type MessageType = import("whatsapp-web.js").Message;
 
@@ -22,6 +23,32 @@ type PendingUserReply = {
 };
 
 const pendingReplies = new Map<string, PendingUserReply>();
+let openRouterDisabledUntil = 0;
+
+const getQuotaFallbackReply = (): string =>
+  "Open Router is unavailable right now, so I can't generate a reply. Please try again later.";
+
+const isQuotaError = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; status?: number; error?: { code?: string } } | null;
+  return (
+    maybeError?.code === "insufficient_quota" ||
+    maybeError?.status === 429 ||
+    maybeError?.error?.code === "insufficient_quota"
+  );
+};
+
+const resolveContactName = async (message: MessageType, fallbackName: string): Promise<string> => {
+  if (message.fromMe) {
+    return fallbackName;
+  }
+
+  try {
+    const contact = await message.getContact();
+    return contact.pushname || contact.number || fallbackName;
+  } catch {
+    return fallbackName;
+  }
+};
 
 const getDebounceMs = (): number => {
   const value = Number(process.env.CHAT_BUDDY_RESPONSE_DEBOUNCE_MS ?? "2200");
@@ -64,15 +91,40 @@ const flushBufferedReply = async (userId: string): Promise<void> => {
   pending.timer = null;
   pending.processing = true;
 
+  if (Date.now() < openRouterDisabledUntil) {
+    const reply = getQuotaFallbackReply();
+    storeMessage(contactName, reply, true);
+    rememberOutgoingReply(userId, reply);
+    await latestMessage.reply(reply);
+    pending.processing = false;
+    if (pending.messages.length > 0) {
+      scheduleBufferedReply(userId);
+    } else {
+      pendingReplies.delete(userId);
+    }
+    return;
+  }
+
   try {
-    const reply = await runAgent(userId, contactName, batchedInput, username, agentName);
+    const reply = await runAgent(userId, contactName, batchedInput, username);
 
     storeMessage(contactName, reply, true);
+    rememberOutgoingReply(userId, reply);
 
     await latestMessage.reply(reply);
   } catch (error) {
     console.log("Tripwire triggered:", error);
-    await latestMessage.reply("I cannot respond to that request.");
+    const fallbackReply = isQuotaError(error)
+      ? getQuotaFallbackReply()
+      : "I cannot respond to that request.";
+
+    if (isQuotaError(error)) {
+      openRouterDisabledUntil = Date.now() + 10 * 60 * 1000;
+    }
+
+    storeMessage(contactName, fallbackReply, true);
+    rememberOutgoingReply(userId, fallbackReply);
+    await latestMessage.reply(fallbackReply);
   } finally {
     pending.processing = false;
 
@@ -89,8 +141,6 @@ export const handleMessages = async (
   username: string = "Asad",
   agentName: string = "Luffy",
 ): Promise<void> => {
-  if (message.fromMe) return;
-
   if (message.timestamp * 1000 < botRebootTime) return;
 
   if (!message.body) return;
@@ -101,6 +151,10 @@ export const handleMessages = async (
 
   const protocols = createProtocols(agentName, username);
 
+  if (message.fromMe && shouldIgnoreOutgoingEcho(userId, text)) {
+    return;
+  }
+
   if (
     (message.from.endsWith("@g.us") && !protocols.allowGroupReplies) ||
     message.from === "status@broadcast"
@@ -108,8 +162,7 @@ export const handleMessages = async (
     return;
   }
 
-  const contact = await message.getContact();
-  const contactName = contact.pushname || contact.number;
+  const contactName = await resolveContactName(message, username);
   console.log(`${contactName}: ${text}`);
 
   storeMessage(contactName, text, false);

@@ -15,6 +15,7 @@ export class WhatsAppBot {
   private client: ClientType;
   private username: string;
   private agentName: string;
+  private processedMessageIds = new Map<string, number>();
 
   constructor(username: string = "User", agentName: string = "Assistant") {
     this.username = username;
@@ -33,15 +34,43 @@ export class WhatsAppBot {
   }
 
   private initializeEvents() {
+    const shouldProcessMessage = (message: any): boolean => {
+      const messageId = message?.id?._serialized;
+      if (!messageId) return true;
+
+      const now = Date.now();
+      for (const [id, timestamp] of this.processedMessageIds.entries()) {
+        if (now - timestamp > 5 * 60 * 1000) {
+          this.processedMessageIds.delete(id);
+        }
+      }
+
+      const existing = this.processedMessageIds.get(messageId);
+      if (existing && now - existing < 30 * 1000) {
+        return false;
+      }
+
+      this.processedMessageIds.set(messageId, now);
+      return true;
+    };
+
     this.client.on("qr", (qr) => {
       console.log("Scan QR to login:");
       qrcode.generate(qr, { small: true });
     });
 
+    this.client.on("loading_screen", (percent, message) => {
+      console.log(`WhatsApp loading: ${percent}% - ${message}`);
+    });
+
+    this.client.on("authenticated", () => {
+      console.log("WhatsApp authenticated. Finishing startup...");
+    });
+
     this.client.on("ready", async () => {
       try {
         console.clear();
-        await getBanner(this.agentName, this.username);
+        void getBanner(this.agentName, this.username);
       } catch (err) {
         console.log(err);
       }
@@ -57,16 +86,22 @@ export class WhatsAppBot {
       this.client.initialize();
     });
 
-    this.client.on("message", async (message) => {
+    const onMessage = async (message: any) => {
+      if (!shouldProcessMessage(message)) return;
+
       try {
         await handleMessages(message, this.username, this.agentName);
       } catch (err) {
         console.log("Message error:", err);
       }
-    });
+    };
+
+    this.client.on("message", onMessage);
+    this.client.on("message_create", onMessage);
   }
 
   public start() {
+    console.log("Launching WhatsApp browser session... this can take up to a minute on first run.");
     this.client.initialize().catch((err) => {
       console.log(err);
     });
