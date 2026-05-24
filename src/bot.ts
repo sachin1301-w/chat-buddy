@@ -16,7 +16,6 @@ export class WhatsAppBot {
   private username: string;
   private agentName: string;
   private processedMessageIds = new Map<string, number>();
-  private startupTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(username: string = "User", agentName: string = "Assistant") {
     this.username = username;
@@ -64,20 +63,12 @@ export class WhatsAppBot {
       console.log(`WhatsApp loading: ${percent}% - ${message}`);
     });
 
-    (this.client as any).on("change_state", (state: string) => {
-      console.log(`WhatsApp state: ${state}`);
-    });
-
     this.client.on("authenticated", () => {
       console.log("WhatsApp authenticated. Finishing startup...");
     });
 
     this.client.on("ready", async () => {
       try {
-        if (this.startupTimer) {
-          clearTimeout(this.startupTimer);
-          this.startupTimer = null;
-        }
         console.clear();
         void getBanner(this.agentName, this.username);
       } catch (err) {
@@ -111,18 +102,7 @@ export class WhatsAppBot {
 
   public start() {
     console.log("Launching WhatsApp browser session... this can take up to a minute on first run.");
-
-    this.startupTimer = setTimeout(() => {
-      console.log(
-        "WhatsApp startup is still not ready after 25 seconds. If it stays stuck on loading 99%, run npm run reset, then start again with npm start and re-link WhatsApp.",
-      );
-    }, 25_000);
-
     this.client.initialize().catch((err) => {
-      if (this.startupTimer) {
-        clearTimeout(this.startupTimer);
-        this.startupTimer = null;
-      }
       console.log(err);
     });
   }
