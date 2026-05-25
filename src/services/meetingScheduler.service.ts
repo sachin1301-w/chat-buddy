@@ -40,7 +40,7 @@ const getCalendarReadiness = (): { ready: boolean; reply?: string } => {
       return {
         ready: false,
         reply:
-          "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
+          "Google Calendar is not logged in yet. Run `chat-buddy login` (or `npm run login`) to open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
       };
     }
 
@@ -281,7 +281,7 @@ export const tryCreateMeetingFromText = async (
       return {
         success: false,
         reply:
-          "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
+          "Google Calendar is not logged in yet. Run `chat-buddy login` (or `npm run login`) to open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
       };
     }
 

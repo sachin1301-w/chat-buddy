@@ -163,6 +163,14 @@ export const handleMessages = async (
 
   const protocols = createProtocols(agentName, username);
 
+  const processOutgoing = process.env.PROCESS_OUTGOING_MESSAGES === "true";
+  // By default ignore messages that originate from the bot itself to avoid
+  // accidental echo loops. Enable processing of outgoing messages with
+  // `PROCESS_OUTGOING_MESSAGES=true` when desired (e.g., for testing).
+  if (message.fromMe && !processOutgoing) {
+    return;
+  }
+
   if (message.fromMe && shouldIgnoreOutgoingEcho(userId, text)) {
     return;
   }
