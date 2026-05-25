@@ -90,7 +90,8 @@ export const saveConfig = (config: BotConfig): void => {
     username: config.username,
     agentName: config.agentName,
     openRouterApiKey: encrypt(config.openRouterApiKey),
-    // Keep the legacy field so older builds can still load this config.
+    // Keep the legacy field name as a migration bridge for this build line only.
+    // It mirrors the OpenRouter key and is not a true legacy OpenAI credential.
     openaiApiKey: encrypt(config.openRouterApiKey),
     enableGoogleCalendar: config.enableGoogleCalendar,
     googleOAuthClientId: config.googleOAuthClientId
