@@ -31,20 +31,14 @@ export const handleCommand = async (message: MessageType, text: string): Promise
       - Enter /history for seeing the chat history
       - Enter /reset for reset it to null
       `;
-    rememberOutgoingReply(
-      message.from,
-      replyText,
-    );
+    rememberOutgoingReply(message.from, replyText);
     await message.reply(replyText);
   }
 
   if (lowerText === "/time") {
     const date = new Date();
     const replyText = `The current time is ${date.getHours()}:${date.getMinutes()}`;
-    rememberOutgoingReply(
-      message.from,
-      replyText,
-    );
+    rememberOutgoingReply(message.from, replyText);
     await message.reply(replyText);
   }
 
