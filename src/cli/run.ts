@@ -11,13 +11,30 @@ import { WhatsAppBot } from "../bot.js";
 import { resolveAuthContext } from "../auth/googleAuth.js";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(moduleDir, "..", "..");
+
+// Determine project root by searching upwards from the current working
+// directory for a package.json. Fall back to moduleDir's ancestor if not found.
+const findProjectRoot = (): string => {
+  let dir = process.cwd();
+  while (true) {
+    if (fs.existsSync(path.join(dir, "package.json"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // fallback to module directory parent
+  return path.resolve(moduleDir, "..", "..");
+};
+
+const projectRoot = findProjectRoot();
 const envPath = path.join(projectRoot, ".env");
 const envPathAlt = path.join(projectRoot, "env");
 if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath, override: true });
+  // Do not override existing environment variables by default; file values
+  // should not silently clobber environment variables in production.
+  dotenv.config({ path: envPath });
 } else if (fs.existsSync(envPathAlt)) {
-  dotenv.config({ path: envPathAlt, override: true });
+  dotenv.config({ path: envPathAlt });
 }
 
 const readOpenRouterKeyFromEnvFile = (): string | undefined => {

@@ -43,7 +43,10 @@ export const handleCommand = async (message: MessageType, text: string): Promise
   }
 
   if (lowerText.startsWith("/schedule")) {
-    const result = await tryCreateMeetingFromText(message.from, normalizedText);
+    // Resolve the requester to a stable contact name so meeting records
+    // remain consistent with other call sites that use contact names.
+    const requesterName = await getSafeContactName(message, "User");
+    const result = await tryCreateMeetingFromText(requesterName, normalizedText);
 
     if (result) {
       rememberOutgoingReply(message.from, result.reply);

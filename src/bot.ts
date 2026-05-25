@@ -53,7 +53,14 @@ export class WhatsAppBot {
     this.agentName = agentName;
 
     const dataPath = getStorageDir();
-    clearPersistedWhatsAppSession(dataPath);
+    // Only clear persisted WhatsApp session when explicitly requested.
+    // This avoids forcing a QR re-scan on every startup.
+    const shouldClearSessions =
+      process.env.CLEAR_WHATSAPP_SESSION === "true" || process.env.CLEAR_WHATSAPP_SESSION === "1";
+
+    if (shouldClearSessions) {
+      clearPersistedWhatsAppSession(dataPath);
+    }
 
     this.client = new Client({
       authStrategy: new LocalAuth({ dataPath }),
