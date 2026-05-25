@@ -1,6 +1,8 @@
 /**
  * Bot
  */
+import fs from "fs";
+import path from "path";
 import pkg from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 import { handleMessages } from "./services/messageHandler.service.js";
@@ -10,6 +12,35 @@ import { getStorageDir } from "./storage/configStore.js";
 type ClientType = import("whatsapp-web.js").Client;
 
 const { Client, LocalAuth } = pkg;
+
+const clearPersistedWhatsAppSession = (dataPath: string): void => {
+  let cleared = false;
+
+  const removeDirIfExists = (dirPath: string) => {
+    if (!fs.existsSync(dirPath)) return;
+    fs.rmSync(dirPath, { recursive: true, force: true });
+    cleared = true;
+  };
+
+  // Remove LocalAuth session folders while preserving config and other app data.
+  if (fs.existsSync(dataPath)) {
+    const entries = fs.readdirSync(dataPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (/^session(?:-|$)/i.test(entry.name)) {
+        removeDirIfExists(path.join(dataPath, entry.name));
+      }
+    }
+  }
+
+  for (const legacyFolder of [".wwebjs_auth", ".wwebjs_cache", ".wwebjs_session"]) {
+    removeDirIfExists(path.join(dataPath, legacyFolder));
+  }
+
+  if (cleared) {
+    console.log("Cleared saved WhatsApp session. QR scan is required for this run.");
+  }
+};
 
 export class WhatsAppBot {
   private client: ClientType;
@@ -21,8 +52,11 @@ export class WhatsAppBot {
     this.username = username;
     this.agentName = agentName;
 
+    const dataPath = getStorageDir();
+    clearPersistedWhatsAppSession(dataPath);
+
     this.client = new Client({
-      authStrategy: new LocalAuth({ dataPath: getStorageDir() }),
+      authStrategy: new LocalAuth({ dataPath }),
       puppeteer: {
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
