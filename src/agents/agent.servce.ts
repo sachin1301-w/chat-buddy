@@ -34,7 +34,8 @@ const getOpenRouterKey = (): string | undefined => {
   return undefined;
 };
 
-const getOpenRouterModel = (): string => process.env.OPEN_ROUTER_MODEL?.trim() || "meta-llama/llama-3.3-70b-instruct";
+const getOpenRouterModel = (): string =>
+  process.env.OPEN_ROUTER_MODEL?.trim() || "meta-llama/llama-3.3-70b-instruct";
 
 const getOpenRouterClient = (): OpenAI | undefined => {
   const apiKey = getOpenRouterKey();
@@ -107,7 +108,13 @@ export const runAgent = async (
 
   if (openRouterClient) {
     try {
-      finalOutput = await runOpenRouterReply(openRouterClient, historyContext, userMessage, username, contactName);
+      finalOutput = await runOpenRouterReply(
+        openRouterClient,
+        historyContext,
+        userMessage,
+        username,
+        contactName,
+      );
     } catch (orError) {
       console.log("Open Router fallback activated:", orError);
       finalOutput = createLocalFallbackReply(userMessage, contactName);

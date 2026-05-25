@@ -112,9 +112,7 @@ export const runBot = async (): Promise<void> => {
   if (!openRouterKey) {
     console.log(pc.red("  ✗ API key not found!"));
     console.log(
-      pc.dim(
-        "    Run 'Chat-Buddy init' to set up, or create a .env with OPENAI_ROUTER_KEY.",
-      ),
+      pc.dim("    Run 'Chat-Buddy init' to set up, or create a .env with OPENAI_ROUTER_KEY."),
     );
     process.exit(1);
   }

@@ -17,7 +17,8 @@ export type ScheduledMeetingResult = {
   scheduledFor?: string;
 };
 
-const meetingIntentPattern = /\b(schedule|book|set up|arrange|create|plan)\b.*\bmeeting\b|\bmeeting\b.*\b(schedule|book|set up|arrange|create|plan)\b/i;
+const meetingIntentPattern =
+  /\b(schedule|book|set up|arrange|create|plan)\b.*\bmeeting\b|\bmeeting\b.*\b(schedule|book|set up|arrange|create|plan)\b/i;
 const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i;
 
 const getCalendarReadiness = (): { ready: boolean; reply?: string } => {
@@ -27,7 +28,8 @@ const getCalendarReadiness = (): { ready: boolean; reply?: string } => {
   if (!authContext) {
     return {
       ready: false,
-      reply: "Google Calendar is not configured yet. Enable Google Calendar in setup, then resend the meeting request.",
+      reply:
+        "Google Calendar is not configured yet. Enable Google Calendar in setup, then resend the meeting request.",
     };
   }
 
@@ -44,14 +46,18 @@ const getCalendarReadiness = (): { ready: boolean; reply?: string } => {
 
     return {
       ready: false,
-      reply: "Google Calendar authentication is unavailable right now. Run chat-buddy login and try again.",
+      reply:
+        "Google Calendar authentication is unavailable right now. Run chat-buddy login and try again.",
     };
   }
 
   return { ready: true };
 };
 
-const getTimeZoneParts = (date: Date, timeZone: string): { year: number; month: number; day: number } => {
+const getTimeZoneParts = (
+  date: Date,
+  timeZone: string,
+): { year: number; month: number; day: number } => {
   const formatter = new Intl.DateTimeFormat("en-GB", {
     timeZone,
     year: "numeric",
@@ -117,7 +123,12 @@ const makeDateInTimeZone = (
   return candidate;
 };
 
-const addDays = (year: number, month: number, day: number, days: number): { year: number; month: number; day: number } => {
+const addDays = (
+  year: number,
+  month: number,
+  day: number,
+  days: number,
+): { year: number; month: number; day: number } => {
   const shifted = new Date(Date.UTC(year, month - 1, day + days));
 
   return {
@@ -134,7 +145,7 @@ const extractMeetingTitle = (text: string, timeText: string): string => {
     .replace(/\b(meeting|call|calendar|event)\b/gi, " ")
     .replace(/\b(today|tomorrow|tonight|at|on|for|by|around)\b/gi, " ")
     .replace(timeText, " ")
-    .replace(/[^a-zA-Z0-9\s'\-]/g, " ")
+    .replace(/[^a-zA-Z0-9\s'-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -146,7 +157,14 @@ const buildScheduledDate = (text: string, timeMatch: RegExpMatchArray): Date | n
   const rawHour = Number(timeMatch[1]);
   const minute = Number(timeMatch[2] ?? "0");
 
-  if (!Number.isFinite(rawHour) || rawHour < 1 || rawHour > 12 || !Number.isFinite(minute) || minute < 0 || minute > 59) {
+  if (
+    !Number.isFinite(rawHour) ||
+    rawHour < 1 ||
+    rawHour > 12 ||
+    !Number.isFinite(minute) ||
+    minute < 0 ||
+    minute > 59
+  ) {
     return null;
   }
 
@@ -171,7 +189,14 @@ const buildScheduledDate = (text: string, timeMatch: RegExpMatchArray): Date | n
 
   if (!/\btomorrow\b/i.test(text) && scheduledFor.getTime() <= Date.now()) {
     const nextDay = addDays(targetParts.year, targetParts.month, targetParts.day, 1);
-    scheduledFor = makeDateInTimeZone(nextDay.year, nextDay.month, nextDay.day, hour, minute, OWNER_TIMEZONE);
+    scheduledFor = makeDateInTimeZone(
+      nextDay.year,
+      nextDay.month,
+      nextDay.day,
+      hour,
+      minute,
+      OWNER_TIMEZONE,
+    );
   }
 
   return scheduledFor;
@@ -242,22 +267,23 @@ export const tryCreateMeetingFromText = async (
         : `Done. ${title} is set for ${formatScheduledTime(scheduledFor)}.`,
     };
   } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
-      if (error instanceof GoogleAuthError) {
-        return {
-          success: false,
-          reply:
-            error.code === "NO_TOKEN"
-              ? "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link."
-              : "Google Calendar is not configured yet. Enable Google Calendar in setup, then resend the meeting request.",
-        };
-      }
+    if (error instanceof GoogleAuthError) {
+      return {
+        success: false,
+        reply:
+          error.code === "NO_TOKEN"
+            ? "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link."
+            : "Google Calendar is not configured yet. Enable Google Calendar in setup, then resend the meeting request.",
+      };
+    }
 
-      if (typeof error?.message === "string" && /authentication failed/i.test(error.message)) {
-        return {
-          success: false,
-          reply: "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
-        };
-      }
+    if (typeof error?.message === "string" && /authentication failed/i.test(error.message)) {
+      return {
+        success: false,
+        reply:
+          "Google Calendar is not logged in yet. Open a second terminal in C:\\Users\\ASUS\\Downloads\\gssoc\\chat-buddy and run npm run login. It will open Google sign-in in your browser, then resend the meeting request and I’ll create the Meet link.",
+      };
+    }
 
     const message = error?.message ?? "Unknown error";
     return {

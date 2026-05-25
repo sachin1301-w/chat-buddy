@@ -24,25 +24,28 @@ export const handleCommand = async (message: MessageType, text: string): Promise
   const normalizedText = text.trim();
   const lowerText = normalizedText.toLowerCase();
 
-  if (normalizedText == "/") {
-    rememberOutgoingReply(message.from, `Welcome to bot helper dashboard : 
+  if (normalizedText === "/") {
+    const replyText = `Welcome to bot helper dashboard : 
       - Enter /time for current time
       - Enter /schedule for setting an reminder
       - Enter /history for seeing the chat history
       - Enter /reset for reset it to null
-      `);
-    await message.reply(`Welcome to bot helper dashboard : 
-        - Enter /time for current time
-        - Enter /schedule for setting an reminder
-        - Enter /history for seeing the chat history
-        - Enter /reset for reset it to null
-        `);
+      `;
+    rememberOutgoingReply(
+      message.from,
+      replyText,
+    );
+    await message.reply(replyText);
   }
 
-  if (lowerText == "/time") {
+  if (lowerText === "/time") {
     const date = new Date();
-    rememberOutgoingReply(message.from, `The current time is ${date.getHours()}:${date.getMinutes()}`);
-    await message.reply(`The current time is ${date.getHours()}:${date.getMinutes()}`);
+    const replyText = `The current time is ${date.getHours()}:${date.getMinutes()}`;
+    rememberOutgoingReply(
+      message.from,
+      replyText,
+    );
+    await message.reply(replyText);
   }
 
   if (lowerText.startsWith("/schedule")) {
@@ -60,22 +63,25 @@ export const handleCommand = async (message: MessageType, text: string): Promise
     await message.reply(promptReply);
   }
 
-  if (lowerText == "/reset") {
+  if (lowerText === "/reset") {
     const contactName = await getSafeContactName(message, "User");
     clearHistory(contactName);
-    rememberOutgoingReply(message.from, "Chat history has been cleared.");
-    await message.reply("Chat history has been cleared.");
+    const replyText = "Chat history has been cleared.";
+    rememberOutgoingReply(message.from, replyText);
+    await message.reply(replyText);
   }
 
-  if (lowerText == "/history") {
+  if (lowerText === "/history") {
     const contactName = await getSafeContactName(message, "User");
     const history = getHistory(contactName);
     if (history.length === 0) {
-      rememberOutgoingReply(message.from, "No chat history found.");
-      await message.reply("No chat history found.");
+      const replyText = "No chat history found.";
+      rememberOutgoingReply(message.from, replyText);
+      await message.reply(replyText);
     } else {
-      rememberOutgoingReply(message.from, history.join("\n"));
-      await message.reply(history.join("\n"));
+      const replyText = history.join("\n");
+      rememberOutgoingReply(message.from, replyText);
+      await message.reply(replyText);
     }
   }
 };
